@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 import fs
-import os
+import util
 
 def walk(img):
   out = []
@@ -12,7 +12,8 @@ def walk(img):
   return out
 
 if __name__ == '__main__':
-  img = 'disk.img'
+  img = 'disk32.img'
   print('ls %s\n' % img, walk(img))
+  print('ls %s\n' % img, util.walk(img))
   
 
