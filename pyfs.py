@@ -6,8 +6,9 @@ if __name__ == '__main__':
 
   img = 'disk32.img'
 
-  file = 'AAA.TXT'
+  F = ['EXAMPLE1.TXT', 'EXAMPLE2.TXT', 'AAA.TXT', 'something/EXAMPLE3.TXT']
 
   b = util.open_fs(img)
 
-  print(b.open(file).read())
+  for fn in F:
+      print(fn, '\n', b.open(fn).read())

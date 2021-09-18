@@ -8,6 +8,8 @@
 
 import struct
 
+dat_start = 0
+
 def ppd(dat: dict): # pretty print dict
     for each in dat:
         print('{:15} {}'.format(each, dat[each]))
@@ -27,6 +29,7 @@ class BPH:
     fat_fmt    = '<IHHIHH12sBBB4s11s8s'
 
     def __init__(self, path):
+        global dat_start
         try:
             with open(path, 'rb') as f:
                 self.boot_sector = f.read(512)
@@ -43,6 +46,9 @@ class BPH:
         self.dat_offset = (self.bph['reserved']
                 + self.fat['length'] * self.bph['fats']
                 )* self.sec_size
+
+        dat_start = self.dat_offset # shameful hack
+
 
         self.fat_offset = self.bph['reserved'] * self.sec_size
 
@@ -79,6 +85,34 @@ class DIRENT:
     def GetExtension(self):
         return self.dir['name'][8:].decode('utf-8').strip()
 
+    def ls(self):
+        assert self.IsDir()
+
+        Cluster = (self.dir['starthi'] << 2) + self.dir['start']
+        curr = dat_start + (Cluster - 2) * 512
+
+        o = open('disk32.img', 'rb') # shameful hack
+        o.seek(curr)
+        b = o.read(512)
+
+        out = []
+        i = 0
+        while True:
+            c = DIRENT(b, i)
+            if c.dir['name'][0] == 0:
+                break
+            out.append(c)
+            i = c.dir['pos'] + c.dir['d_cnt'] * 32
+        return out
+
+    def open(self, paths: list):
+        for e in self.ls():
+            if repr(e) == paths[0]:
+                if e.IsDir():
+                    return e.open(paths[1:])
+                else:
+                    return e
+
     def __repr__(self):
         fname = ''
         if self.lfname != '':
@@ -109,7 +143,6 @@ class File():
                 cluster = struct.unpack('<I', self.fs.fat_table[pos:pos+4])[0]
         return c
 
-
     def read(self):
         b = b''
 
@@ -119,8 +152,6 @@ class File():
 
         for i, e in enumerate(self.clusters()):
             CurrSz = min(FileSz - i*Sec_Sz, Sec_Sz)
-
-            print(hex(Offset + e * Sec_Sz))
 
             self.fs.fs.seek(Offset + e * Sec_Sz)
 
@@ -151,9 +182,14 @@ class pfs():
         return out
 
     def open(self, fn: str):
+        paths = fn.split('/')
         for e in self.root_dir:
-            if repr(e) == fn:
-                return File(e, self)
+            if repr(e) == paths[0]:
+                if e.IsDir():
+                    return File(e.open(paths[1:]), self)
+                else:
+                    assert len(paths) == paths.index(repr(e)) + 1
+                    return File(e, self)
 
 def open_fs(path: str):
     fs = pfs(path)
