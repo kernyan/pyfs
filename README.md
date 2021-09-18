@@ -3,10 +3,10 @@
 Python implementation of filesystem
 
 ## FAT32
- [x] read BIOS parameter block (BPB)
- [x] recursive read directory
- [x] read file spanning multiple sectors
- [x] long file name
+- [x] read BIOS parameter block (BPB)
+- [x] recursive read directory
+- [x] read file spanning multiple sectors
+- [x] long file name
 
 ## Usage
 ```python
