@@ -13,5 +13,15 @@ def walk(img):
 
 if __name__ == '__main__':
   img = 'disk32.img'
-  print('ls %s\n' % img, walk(img))
-  print('ls %s\n' % img, util.walk(img))
+
+  #file = '/something/EXAMPLE3.TXT'
+  file = 'AAA.TXT'
+
+  a = fs.open_fs("fat://" + img)
+  b = util.open_fs(img)
+
+  #print('ls %s\n' % img, walk(img))
+
+  #print(a.open(file).read())
+  print(b.open(file).read())
+  #print('ls %s\n' % img, util.ls(img))

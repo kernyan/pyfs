@@ -33,7 +33,8 @@ class BPH:
                 self.bph = dict(zip(self.bph_header, struct.unpack(self.bph_fmt, self.boot_sector[:36])))
                 self.fat = dict(zip(self.fat_header, struct.unpack(self.fat_fmt, self.boot_sector[36:90])))
         except:
-            raise Exception('Failed to read header {}'.format(path))
+            Msg = 'Failed to read header {}'.format(path)
+            raise Exception(Msg)
 
         if self.fat['fs_type'] != b'FAT32   ':
             raise Exception('Only FAT32 is supported')
@@ -87,27 +88,44 @@ class DIRENT:
         Extension = '' if self.IsDir() else '.' + self.GetExtension()
         return (fname.lower() if self.dir['lcase'] == 0x8 else fname) + \
                (Extension.lower() if self.dir['lcase'] == 0x10 else Extension)
-def parse_directory(b: bytes, offset=0):
-    out = []
-    i = 0
-    while True:
-        c = DIRENT(b, i)
-        if c.dir['name'][0] == 0:
-            break
-        out.append(c)
-        i = c.dir['pos'] + c.dir['d_cnt'] * 32
-    return out
 
-def walk(path: str):
+class File():
+    def __init__(self, d: DIRENT):
+        self.d = d
 
-    a = BPH(path)
+    def read(self):
+        return self.d.dir['start'] + (self.d.dir['starthi'] << 1)
 
-    root_dir = open(path, 'rb')
-    root_dir.seek(a.dat_offset)
-    b = root_dir.read(512)
-    i = 0
 
-    Files = []
+class pfs():
+    def __init__(self, path: str):
+        self.BPH = BPH(path)
+        self.fs = open(path, 'rb')
+        self.root_dir = self.parse_rootdir()
 
-    out = parse_directory(b)
-    return out
+    def open(self, fn: str):
+        return self.root_dir
+
+    def parse_rootdir(self):
+        self.fs.seek(self.BPH.dat_offset)
+        b = self.fs.read(512)
+        out = []
+        i = 0
+        while True:
+            c = DIRENT(b, i)
+            if c.dir['name'][0] == 0:
+                break
+            out.append(c)
+            i = c.dir['pos'] + c.dir['d_cnt'] * 32
+        return out
+
+    def open(self, fn: str):
+        for e in self.root_dir:
+            if repr(e) == fn:
+                return File(e)
+
+def open_fs(path: str):
+    fs = pfs(path)
+    return fs
+
+
