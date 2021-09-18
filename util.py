@@ -1,11 +1,5 @@
 # util module for fat file system
 
-# read BPB (BIOS parameter block)
-# calculate reserved sector
-# calculate FAT sector
-# parse root directory
-# read file
-
 import struct
 
 dat_start = 0
@@ -52,6 +46,17 @@ class BPH:
 
         self.fat_offset = self.bph['reserved'] * self.sec_size
 
+def parse_dir(b: bytes):
+    out = []
+    i = 0
+    while True:
+        c = DIRENT(b, i)
+        if c.dir['name'][0] == 0:
+            break
+        out.append(c)
+        i = c.dir['pos'] + c.dir['d_cnt'] * 32
+    return out
+
 class DIRENT:
     dir_header = ['name', 'attr', 'lcase', 'ctime_cs', 'ctime',
                   'cdate', 'adate', 'starthi', 'time', 'date',
@@ -95,15 +100,7 @@ class DIRENT:
         o.seek(curr)
         b = o.read(512)
 
-        out = []
-        i = 0
-        while True:
-            c = DIRENT(b, i)
-            if c.dir['name'][0] == 0:
-                break
-            out.append(c)
-            i = c.dir['pos'] + c.dir['d_cnt'] * 32
-        return out
+        return parse_dir(b)
 
     def open(self, paths: list):
         for e in self.ls():
@@ -171,15 +168,7 @@ class pfs():
     def parse_rootdir(self):
         self.fs.seek(self.BPH.dat_offset)
         b = self.fs.read(512)
-        out = []
-        i = 0
-        while True:
-            c = DIRENT(b, i)
-            if c.dir['name'][0] == 0:
-                break
-            out.append(c)
-            i = c.dir['pos'] + c.dir['d_cnt'] * 32
-        return out
+        return parse_dir(b)
 
     def open(self, fn: str):
         paths = fn.split('/')

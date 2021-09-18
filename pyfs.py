@@ -11,4 +11,5 @@ if __name__ == '__main__':
   b = util.open_fs(img)
 
   for fn in F:
-      print(fn, '\n', b.open(fn).read())
+      print(fn)
+      print(b.open(fn).read(), '\n')
