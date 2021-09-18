@@ -24,3 +24,10 @@ mdir -i disk32.img
 #mcopy -i disk.img ::/example1.txt extracted1.txt
 
 
+#dd if=/dev/zero of=disk.img bs=512 count=65000
+#mformat -i disk.img ::
+#mcopy -i disk.img example1.txt example2.txt ::
+#mmd -i disk.img ::something
+#mcopy -i disk.img example3.txt ::something
+#mcopy -i disk.img aaa.txt ::
+#mdir -i disk.img

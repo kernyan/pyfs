@@ -15,5 +15,3 @@ if __name__ == '__main__':
   img = 'disk32.img'
   print('ls %s\n' % img, walk(img))
   print('ls %s\n' % img, util.walk(img))
-  
-
