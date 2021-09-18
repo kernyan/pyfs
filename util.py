@@ -90,12 +90,43 @@ class DIRENT:
                (Extension.lower() if self.dir['lcase'] == 0x10 else Extension)
 
 class File():
-    def __init__(self, d: DIRENT):
+    def __init__(self, d: DIRENT, fs):
         self.d = d
+        self.fs = fs
+
+    def clusters(self):
+
+        c       = []
+        cluster = self.d.dir['start'] + (self.d.dir['starthi'] << 1)
+        Sec_Sz  = self.fs.BPH.bph['sector_size']
+
+        while True:
+            if (cluster >> 4) == 0x0FFFFFF and (cluster & 0xF) >= 0x8:
+                break
+            else:
+                c.append(cluster - 2)
+                pos = cluster << 2
+                cluster = struct.unpack('<I', self.fs.fat_table[pos:pos+4])[0]
+        return c
+
 
     def read(self):
-        return self.d.dir['start'] + (self.d.dir['starthi'] << 1)
+        b = b''
 
+        FileSz = self.d.dir['size']
+        Sec_Sz = self.fs.BPH.bph['sector_size']
+        Offset = self.fs.BPH.dat_offset
+
+        for i, e in enumerate(self.clusters()):
+            CurrSz = min(FileSz - i*Sec_Sz, Sec_Sz)
+
+            print(hex(Offset + e * Sec_Sz))
+
+            self.fs.fs.seek(Offset + e * Sec_Sz)
+
+            b = b + self.fs.fs.read(CurrSz)
+
+        return b
 
 class pfs():
     def __init__(self, path: str):
@@ -103,8 +134,8 @@ class pfs():
         self.fs = open(path, 'rb')
         self.root_dir = self.parse_rootdir()
 
-    def open(self, fn: str):
-        return self.root_dir
+        self.fs.seek(self.BPH.fat_offset)
+        self.fat_table = self.fs.read(self.BPH.fat['length'] * self.BPH.bph['sector_size'])
 
     def parse_rootdir(self):
         self.fs.seek(self.BPH.dat_offset)
@@ -122,10 +153,8 @@ class pfs():
     def open(self, fn: str):
         for e in self.root_dir:
             if repr(e) == fn:
-                return File(e)
+                return File(e, self)
 
 def open_fs(path: str):
     fs = pfs(path)
     return fs
-
-
