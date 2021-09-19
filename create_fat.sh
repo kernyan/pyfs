@@ -14,12 +14,15 @@ if [ ! -f example3.txt ]; then
   echo $'iamindirectory\nrow2\r\nrow3' > example3.txt
 fi
 
-dd if=/dev/zero of=disk.img bs=1M count=2
-mformat -i disk.img ::
-mcopy -i disk.img example1.txt example2.txt ::
-mmd -i disk.img ::something
-mcopy -i disk.img example3.txt ::something
-mdir -i disk.img
-#mcopy -i disk.img ::/example1.txt extracted1.txt
+if [ ! -f aaa.txt ]; then
+  python3 -c "print('A'*512+'B'*512+'C'*6)" >> aaa.txt
+fi
 
-
+# create FAT32 disk
+dd if=/dev/zero of=disk32.img bs=1M count=33
+mformat -F -i disk32.img ::
+mcopy -i disk32.img example1.txt example2.txt ::
+mmd -i disk32.img ::something
+mcopy -i disk32.img example3.txt ::something
+mcopy -i disk32.img aaa.txt ::
+mdir -i disk32.img
