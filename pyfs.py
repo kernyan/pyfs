@@ -1,18 +1,15 @@
 #! /usr/bin/env python3
 
-import fs
-import os
-
-def walk(img):
-  out = []
-  a = fs.open_fs("fat://" + img)
-
-  for path in a.walk.files():
-    out.append(path)
-  return out
+import util
 
 if __name__ == '__main__':
-  img = 'disk.img'
-  print('ls %s\n' % img, walk(img))
-  
 
+  img = 'disk32.img'
+
+  F = ['EXAMPLE1.TXT', 'EXAMPLE2.TXT', 'AAA.TXT', 'something/EXAMPLE3.TXT']
+
+  b = util.open_fs(img)
+
+  for fn in F:
+      print(fn)
+      print(b.open(fn).read(), '\n')
